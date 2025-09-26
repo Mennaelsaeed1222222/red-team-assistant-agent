@@ -1,0 +1,99 @@
++*In[ ]:*+
+[source, ipython3]
+----
+import requests, whois, dns.resolver, json, os
+from datetime import datetime
+
+DOMAIN = "httpbin.org"   
+RESULTS_DIR = "results"
+os.makedirs(RESULTS_DIR, exist_ok=True)
+
+def get_whois(domain):
+    try:
+        w = whois.whois(domain)
+        return {
+            "domain_name": w.domain_name,
+            "registrar": w.registrar,
+            "creation_date": str(w.creation_date),
+            "expiration_date": str(w.expiration_date),
+            "name_servers": w.name_servers,
+            "emails": w.emails,
+        }
+    except Exception as e:
+        return {"error": f"whois error: {e}"}
+
+def get_crt_subdomains(domain):
+    url = f"https://crt.sh/?q=%25.{domain}&output=json"
+    try:
+        r = requests.get(url, timeout=20)
+        if r.status_code != 200:
+            return {"error": f"crt.sh returned status {r.status_code}"}
+        data = r.json()
+        names = set()
+        for entry in data:
+            name = entry.get("name_value")
+            if not name:
+                continue
+            for n in str(name).split("\n"):
+                n = n.strip()
+                if n.endswith(domain):
+                    names.add(n.lstrip("*."))
+        return {"subdomains": sorted(names)}
+    except Exception as e:
+        return {"error": f"crt.sh error: {e}"}
+
+def resolve_subdomains(subdomains):
+    resolver = dns.resolver.Resolver()
+    results = {}
+    for sub in subdomains:
+        try:
+            answers = resolver.resolve(sub, "A")
+            ips = [r.to_text() for r in answers]
+            results[sub] = {"A": ips}
+        except Exception as e:
+            results[sub] = {"error": str(e)}
+    return results
+
+def save_results(domain, payload):
+    ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    fname = f"{domain}_recon_{ts}.json"
+    path = os.path.join(RESULTS_DIR, fname)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+    return path
+
+print(f"[+] Starting recon for: {DOMAIN}")
+whois_data = get_whois(DOMAIN)
+print("[+] WHOIS fetched.")
+
+crt = get_crt_subdomains(DOMAIN)
+subdomains = crt.get("subdomains", []) if isinstance(crt, dict) else []
+print(f"[+] Found {len(subdomains)} subdomains from crt.sh.")
+
+dns_res = resolve_subdomains(subdomains)
+print("[+] DNS resolution completed.")
+
+payload = {
+    "domain": DOMAIN,
+    "timestamp_utc": datetime.utcnow().isoformat() + "Z",
+    "whois": whois_data,
+    "crt_sh": crt,
+    "dns_resolution": dns_res,
+}
+
+saved = save_results(DOMAIN, payload)
+print(f"[+] Results saved to: {saved}")
+print("\n--- SUMMARY ---")
+print("Domain:", payload["domain"])
+
+
+if "error" in whois_data:
+    print("WHOIS: ERROR:", whois_data["error"])
+else:
+    print("Registrar:", whois_data.get("registrar"))
+    print("Name servers:", whois_data.get("name_servers"))
+print("Subdomains found:", len(subdomains))
+print("Sample subdomains:", subdomains[:10])
+
+
+----
