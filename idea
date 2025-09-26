@@ -1,0 +1,34 @@
+This project is a simple Red Team assistant agent for basic reconnaissance.
+It automates the first step of red teaming: gathering information about a target domain.
+
+What it does
+
+WHOIS Lookup → collects registration details (registrar, creation/expiration dates, name servers, emails).
+
+Certificate Transparency Search (crt.sh) → extracts possible subdomains from public certificates.
+
+DNS Resolution → checks which subdomains resolve to valid IP addresses.
+
+Result Saving → stores everything in a structured JSON file inside a results/ folder.
+
+Why it’s useful
+
+Automates repetitive recon steps.
+
+Gives a clean JSON output that can be reused by other tools.
+
+Lightweight and easy to run locally.
+
+How it works (flow)
+
+Input: a domain name (e.g., example.com).
+
+Run WHOIS → normalize the data.
+
+Query crt.sh for subdomains.
+
+Resolve each subdomain to IPs (DNS A records).
+
+Save results to results/domain_recon_<timestamp>.json.
+
+
