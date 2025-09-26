@@ -1,0 +1,29 @@
+{
+  "domain": "httpbin.org",
+  "timestamp_utc": "2025-09-26T15:30:45Z",
+  "whois": {
+    "domain_name": ["httpbin.org"],
+    "registrar": "Example Registrar, Inc.",
+    "creation_date": "1995-08-13",
+    "expiration_date": "2026-08-12",
+    "name_servers": ["a.iana-servers.net", "b.iana-servers.net"],
+    "emails": ["admin@httpbin.org.com"]
+  },
+  "crt_sh": {
+    "subdomains": [
+      "www.httpbin.org.com",
+      "mail.httpbin.org.com",
+      "dev.httpbin.org.com"
+    ]
+  },
+  "dns_resolution": {
+    "www.httpbin.org.com": { "A": ["93.184.216.34"] },
+    "mail.httpbin.org.com": { "error": "NXDOMAIN" },
+    "dev.httpbin.org.com": { "A": ["93.184.216.35", "93.184.216.36"] }
+  },
+  "summary": {
+    "whois_ok": true,
+    "subdomains_count": 3,
+    "resolved_count": 2
+  }
+}
